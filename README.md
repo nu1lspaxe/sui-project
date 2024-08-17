@@ -1,1 +1,1 @@
-# sui_project
+# sui-project
