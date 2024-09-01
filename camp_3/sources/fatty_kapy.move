@@ -1,4 +1,4 @@
-module camp_2::kapy {
+module camp_3::fatty_kapy {
 
     // Dependencies
 
@@ -6,7 +6,7 @@ module camp_2::kapy {
     use sui::package;
     use sui::display;
     use sui::vec_set::{Self, VecSet};
-    use camp_2::orange::{Self, Orange};
+    use camp_3::orange::{Self, Orange};
 
     // Errors
 
@@ -14,7 +14,10 @@ module camp_2::kapy {
     fun err_carry_same_kind_of_orange() { abort ECarrySameKindOfOrange }
 
     // One Time Witness
-    public struct KAPY has drop {}
+
+    public struct FATTY_KAPY has drop {}
+
+    // Object (NFT)
 
     public struct Kapy has key, store {
         id: UID,
@@ -34,7 +37,7 @@ module camp_2::kapy {
 
     // Constructor
 
-    fun init(otw: KAPY, ctx: &mut TxContext) {
+    fun init(otw: FATTY_KAPY, ctx: &mut TxContext) {
         // setup Kapy display
         let keys = vector[
             utf8(b"name"),
@@ -50,7 +53,7 @@ module camp_2::kapy {
             // description
             utf8(b"Each orange represents your effort and achievement!"),
             // image_url
-            utf8(b"https://aqua-natural-grasshopper-705.mypinata.cloud/ipfs/Qmd9RpFKPBDzHdfnq7HSdhND9svg1fJxr7GAwTYwfEr5vh/27_1o.png"),
+            utf8(b"https://aqua-natural-grasshopper-705.mypinata.cloud/ipfs/Qmd9RpFKPBDzHdfnq7HSdhND9svg1fJxr7GAwTYwfEr5vh/27_{level}o.png"),
             // project_url
             utf8(b"https://lu.ma/skany77u"),
             // creator
@@ -68,7 +71,7 @@ module camp_2::kapy {
         transfer::public_transfer(publisher, deployer);
 
         // mint cap
-        let cap = MintCap {id: object::new(ctx), supply: 0};
+        let cap = MintCap { id: object::new(ctx), supply: 0 };
         transfer::transfer(cap, deployer);
     }
 
@@ -85,7 +88,7 @@ module camp_2::kapy {
         kapy: &mut Kapy,
         orange: Orange,
     ) {
-        let orange_kind = orange::destory(orange);
+        let orange_kind = orange::destroy(orange);
         if (vec_set::contains(kapy.belongings(), &orange_kind))
             err_carry_same_kind_of_orange();
         vec_set::insert(&mut kapy.belongings, orange_kind);
@@ -145,6 +148,54 @@ module camp_2::kapy {
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) {
         use sui::test_utils;
-        init(test_utils::create_one_time_witness<KAPY>(), ctx);
+        init(test_utils::create_one_time_witness<FATTY_KAPY>(), ctx);
+    }
+
+    // New
+    use sui::dynamic_field as df;
+    use sui::dynamic_object_field as dof;
+
+    
+    // Additional Information
+    public struct KapyWrappedInfo has store{
+        age: u8,
+        gender: bool,
+        height: u64
+    }
+
+    public struct Hat has key, store{
+        id: UID,
+        color: String,
+        size: u8
+    }
+
+    public fun add_info(
+        kapy: &mut Kapy,
+        age: u8,
+        gender: bool,
+        height: u64
+    ) {
+        let info = KapyWrappedInfo {
+            age,
+            gender,
+            height
+        };
+
+        df::add(&mut kapy.id, std::type_name::get<KapyWrappedInfo>(), info);
+    }
+
+    public fun equip_hat(
+        kapy: &mut Kapy,
+        color: String,
+        size: u8,
+        ctx: &mut TxContext
+    ) {
+        let hat = Hat {
+            id: object::new(ctx),
+            color,
+            size
+        };
+
+        dof::add(&mut kapy.id, std::type_name::get<Hat>(), hat);
     }
 }
